@@ -19,7 +19,7 @@ for (int i = 0; i < 50 - path_size; i++) {
    next_x_vals.push_back(pos_x);
    next_y_vals.push_back(pos_y);
 ```
-  _The car now is driving on the center of the road (on the doulbe yellow line!)_ 
+   _The car now is driving on the center of the road (on the doulbe yellow line!)_ 
 * Make the car drives on the first inner lane (2 mm away from the yellow line)
 ```
 vector<double> pos_frenet;
@@ -32,6 +32,19 @@ for (int i = 0; i < 50 - path_size; i++) {
     cout << "new fre: [" << pos_frenet[0] << ", " << pos_frenet[1] << "]" << std::endl;
     pos_lane = getXY(pos_frenet[0], pos_frenet[1]+2,
     map_waypoints_s, map_waypoints_x, map_waypoints_y);
+    next_x_vals.push_back(pos_lane[0]);
+    next_y_vals.push_back(pos_lane[1]);
+```
+* Or Using Frenet coordinations to advance the distance
+```
+pos_lane = {pos_x, pos_y};
+pos_frenet = getFrenet(pos_lane[0], pos_lane[1], angle, map_waypoints_x, map_waypoints_y);
+double pos_s = pos_frenet[0];
+double pos_d = 2; // pos_frenet[1];
+for (int i = 0; i < 50 - path_size; i++) {
+    pos_s += dist_inc;
+		pos_lane = getXY(pos_s, pos_d,
+                     map_waypoints_s, map_waypoints_x, map_waypoints_y);
     next_x_vals.push_back(pos_lane[0]);
     next_y_vals.push_back(pos_lane[1]);
 ```
