@@ -50,6 +50,25 @@ for (int i = 0; i < 50 - path_size; i++) {
 ```
 Now the car can drive on inner lane, middle lane, and outside lane with pos_d equals to 2, 4, 10 respectively. For testing purpose, use a large number of dis_inc to finish a loop quicker. For example, dist_inc = 5 will have the car running 559 MPH, which the car will finish a loop in about 20 seconds.
 
+### Keep distance from the car ahead
+```
+/// keep distance
+auto lane_sensors = t3p1help::sortSensor(sensor_fusion);
+double front_s = t3p1help::getFrontS(pos_s, pos_d, lane_sensors);
+// cout << "front s dist: " << front_s << endl;
+
+double total_path_size = 50;
+double buffer = 10;
+double steps = total_path_size - path_size;
+double dist_inc;
+dist_inc = (front_s - buffer)/steps;
+if (dist_inc > max_dist_inc) {
+    dist_inc = max_dist_inc;
+}
+```
+The front_s will get the distance of in Frent s from the car ahead in the same lane. dist_inc is adjusted accordingly to keep a buffer distance.
+
+
 ## Third Party Library
 * [spline tool](http://kluge.in-chemnitz.de/opensource/spline/)
 
