@@ -254,14 +254,12 @@ int main() {
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
             /// Starter code provided from the lecture
 
-			// Print the sensor_fusion info
-
-
-			auto lanes = t3p1help::sortSensor(sensor_fusion);
-			for  (auto lane : lanes) {
-				cout << "lane sensors:" << endl;
-				t3p1help::print_sensors(lane);
-			}
+			auto lane_sensors = t3p1help::sortSensor(sensor_fusion);
+			/// Print the sensor_fusion info
+			// for  (auto lane : lanes) {
+				// cout << "lane sensors:" << endl;
+				// t3p1help::print_sensors(lane);
+			// }
 
           	double pos_x;
           	double pos_y;
@@ -273,7 +271,7 @@ int main() {
           	    next_y_vals.push_back(previous_path_y[i]);
           	}
 
-			cout << "remain path size: " << path_size << std::endl;
+			// cout << "remain path size: " << path_size << std::endl;
           	if (path_size == 0) {
           	    pos_x = car_x;
           	    pos_y = car_y;
@@ -290,14 +288,26 @@ int main() {
 			// int next_point = NextWaypoint(car_x, car_y, angle, map_waypoints_x, map_waypoints_y);
 
           	// double dist_inc = 0.5;
-			double dist_inc = 10;
+			double max_dist_inc = 0.5;
 			vector<double> pos_frenet;
 			vector<double> pos_lane;
 			pos_lane = {pos_x, pos_y};
 			pos_frenet = getFrenet(pos_lane[0], pos_lane[1], angle, map_waypoints_x, map_waypoints_y);
             double pos_s = pos_frenet[0];
 			double pos_d = 10; // pos_frenet[1];
-			for (int i = 0; i < 50 - path_size; i++) {
+
+			/// keep distance
+			double front_s = t3p1help::getFrontS(pos_s, pos_d, lane_sensors);
+			cout << "front s dist: " << front_s << endl;
+
+			double total_path_size = 20;
+			double buffer = 10;
+			double steps = total_path_size - path_size;
+			double dist_inc = (front_s - buffer)/steps;
+			if (dist_inc > max_dist_inc) {
+				dist_inc = max_dist_inc;
+			}
+			for (int i = 0; i < steps; i++) {
                 pos_s += dist_inc;
                 cout << "new fre: [" << pos_s << ", " << pos_d << "]" << std::endl;
 				pos_lane = getXY(pos_s, pos_d,
