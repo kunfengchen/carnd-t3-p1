@@ -48,6 +48,7 @@ for (int i = 0; i < 50 - path_size; i++) {
     next_x_vals.push_back(pos_lane[0]);
     next_y_vals.push_back(pos_lane[1]);
 ```
+Now the car can drive on inner lane, middle lane, and outside lane with pos_d equals to 2, 4, 10 respectively. For testing purpose, use a large number of dis_inc to finish a loop quicker. For example, dist_inc = 5 will have the car running 559 MPH, which the car will finish a loop in about 20 seconds.
 
 ## Third Party Library
 * [spline tool](http://kluge.in-chemnitz.de/opensource/spline/)
