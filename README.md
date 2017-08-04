@@ -20,7 +20,7 @@ for (int i = 0; i < 50 - path_size; i++) {
    next_y_vals.push_back(pos_y);
 ```
    _The car now is driving on the center of the road (on the doulbe yellow line!)_ 
-* Make the car drives on the first inner lane (2 mm away from the yellow line)
+* Make the car drives on the first inner lane (2 m away from the yellow line)
 ```
 vector<double> pos_frenet;
 vector<double> pos_lane;
