@@ -4,7 +4,7 @@
 ### Fisrt of all, generate the path flowing the map waypoints
 * Creates the spline from the map waypoints
 ```
-tk::spline map_spline;
+  tk::spline map_spline;
   int n = 80;
   vector<double> subx(map_waypoints_x.begin(), map_waypoints_x.begin() + n);
   vector<double> suby(map_waypoints_y.begin(), map_waypoints_y.begin() + n);
@@ -16,8 +16,24 @@ tk::spline map_spline;
 for (int i = 0; i < 50 - path_size; i++) {
    pos_x += (dist_inc) * cos(angle);
    pos_y = map_spline(pos_x);
-	 next_x_vals.push_back(pos_x);
-	 next_y_vals.push_back(pos_y);
+   next_x_vals.push_back(pos_x);
+   next_y_vals.push_back(pos_y);
+```
+The car now is driving on the center of the road (on the doulbe yellow line!) 
+* Make the car drives on the first inner lane (2 mm away from the yellow line)
+```
+vector<double> pos_frenet;
+vector<double> pos_lane;
+for (int i = 0; i < 50 - path_size; i++) {
+    pos_x += (dist_inc) * cos(angle);
+    pos_y = map_spline(pos_x);
+    cout << "new pos: (" << pos_x << ", " << pos_y << ")" << std::endl;
+    pos_frenet = getFrenet(pos_x, pos_y, angle, map_waypoints_x, map_waypoints_y);
+    cout << "new fre: [" << pos_frenet[0] << ", " << pos_frenet[1] << "]" << std::endl;
+    pos_lane = getXY(pos_frenet[0], pos_frenet[1]+2,
+    map_waypoints_s, map_waypoints_x, map_waypoints_y);
+    next_x_vals.push_back(pos_lane[0]);
+    next_y_vals.push_back(pos_lane[1]);
 ```
 
 ## Third Party Library
