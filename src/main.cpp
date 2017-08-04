@@ -9,6 +9,7 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
 #include "spline.h"
+#include "helper.h"
 
 using namespace std;
 
@@ -137,7 +138,9 @@ vector<double> getXY(double s, double d, vector<double> maps_s, vector<double> m
 {
 	int prev_wp = -1;
 
-	while(s > maps_s[prev_wp+1] && (prev_wp < (int)(maps_s.size()-1) ))
+	//// Bug found by Kostas Oreopoulos from Slack chanel.
+	// while(s > maps_s[prev_wp+1] && (prev_wp < (int)(maps_s.size()-1) ))
+	while((prev_wp < (int)(maps_s.size()-1) && s > maps_s[prev_wp+1] ))
 	{
 		prev_wp++;
 	}
@@ -202,11 +205,6 @@ int main() {
   vector<double> subx(map_waypoints_x.begin(), map_waypoints_x.begin() + n);
   vector<double> suby(map_waypoints_y.begin(), map_waypoints_y.begin() + n);
 
-	for(int i=0; i<n-1; i++) {
-        cout << i << std::endl;
-		assert(subx[i]<subx[i+1]);
-	}
-
   map_spline.set_points(subx, suby);
 
   ///// h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
@@ -254,7 +252,17 @@ int main() {
 
 
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
-            /// Starter code provided from the lecture:
+            /// Starter code provided from the lecture
+
+			// Print the sensor_fusion info
+
+
+			auto lanes = t3p1help::sortSensor(sensor_fusion);
+			for  (auto lane : lanes) {
+				cout << "lane sensors:" << endl;
+				t3p1help::print_sensors(lane);
+			}
+
           	double pos_x;
           	double pos_y;
           	double angle;
@@ -265,6 +273,7 @@ int main() {
           	    next_y_vals.push_back(previous_path_y[i]);
           	}
 
+			cout << "remain path size: " << path_size << std::endl;
           	if (path_size == 0) {
           	    pos_x = car_x;
           	    pos_y = car_y;
@@ -281,13 +290,22 @@ int main() {
 			// int next_point = NextWaypoint(car_x, car_y, angle, map_waypoints_x, map_waypoints_y);
 
           	// double dist_inc = 0.5;
-			double dist_inc = 0.1;
-          	for (int i = 0; i < 50 - path_size; i++) {
-                pos_x += (dist_inc) * cos(angle);
-				pos_y = map_spline(pos_x);
-				cout << "new pos: (" << pos_x << ", " << pos_y << ")" << std::endl;
-				next_x_vals.push_back(pos_x);
-				next_y_vals.push_back(pos_y);
+			double dist_inc = 10;
+			vector<double> pos_frenet;
+			vector<double> pos_lane;
+			pos_lane = {pos_x, pos_y};
+			pos_frenet = getFrenet(pos_lane[0], pos_lane[1], angle, map_waypoints_x, map_waypoints_y);
+            double pos_s = pos_frenet[0];
+			double pos_d = 10; // pos_frenet[1];
+			for (int i = 0; i < 50 - path_size; i++) {
+                pos_s += dist_inc;
+                cout << "new fre: [" << pos_s << ", " << pos_d << "]" << std::endl;
+				pos_lane = getXY(pos_s, pos_d,
+								 map_waypoints_s, map_waypoints_x, map_waypoints_y);
+                // cout << "new pos: (" << pos_lane[0] << ", " << pos_lane[1] << ")" << std::endl;
+				next_x_vals.push_back(pos_lane[0]);
+				next_y_vals.push_back(pos_lane[1]);
+
           	    /// next_x_vals.push_back(pos_x+(dist_inc) * cos(angle+(i+1)*(pi()/100)));
                 /// next_y_vals.push_back(pos_y+(dist_inc) * sin(angle+(i+1)*(pi()/100)));
           	    /// pos_x += (dist_inc) * cos(angle+(i+1)*(pi()/100));
