@@ -22,3 +22,6 @@ for (int i = 0; i < 50 - path_size; i++) {
 
 ## Third Party Library
 * [spline tool](http://kluge.in-chemnitz.de/opensource/spline/)
+
+## References
+* (https://medium.com/@mohankarthik/path-planning-in-highways-for-an-autonomous-vehicle-242b91e6387d)
