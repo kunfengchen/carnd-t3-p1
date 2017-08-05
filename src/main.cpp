@@ -205,10 +205,11 @@ int main() {
   vector<double> subx(map_waypoints_x.begin(), map_waypoints_x.begin() + n);
   vector<double> suby(map_waypoints_y.begin(), map_waypoints_y.begin() + n);
 
-  map_spline.set_points(subx, suby);
+  /// KFC map_spline.set_points(subx, suby);
+  double previous_s = -1; // idea from class slack. since end_path_s is not correct regularly.
 
   ///// h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
-  h.onMessage([&map_spline,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&previous_s,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -271,7 +272,7 @@ int main() {
           	    next_y_vals.push_back(previous_path_y[i]);
           	}
 
-			// cout << "remain path size: " << path_size << std::endl;
+			cout << "remain path size: " << path_size << std::endl;
           	if (path_size == 0) {
           	    pos_x = car_x;
           	    pos_y = car_y;
@@ -288,25 +289,40 @@ int main() {
 			// int next_point = NextWaypoint(car_x, car_y, angle, map_waypoints_x, map_waypoints_y);
 
           	// double dist_inc = 0.5;
-			double max_dist_inc = 0.5;
+			double max_dist_inc = 0.4;
 			vector<double> pos_frenet;
 			vector<double> pos_lane;
 			pos_lane = {pos_x, pos_y};
 			pos_frenet = getFrenet(pos_lane[0], pos_lane[1], angle, map_waypoints_x, map_waypoints_y);
-            double pos_s = pos_frenet[0];
+            double pos_s;
+            if (path_size == 0) {
+				cout << "path size is 0." << endl;
+                ///// NOTE end_path_s is 0 here!!!
+				pos_s = pos_frenet[0];
+			} else {
+				// pos_s = end_path_s;
+				pos_s = previous_s;
+			}
 			double pos_d = 10; // pos_frenet[1];
 
+			///// NOTE: x_to_s will jump ahead regularly!!!
+			cout << "end_path_s: " << end_path_s
+				 << " x_to_s: " << pos_frenet[0]
+				 << " previous_s: " << previous_s << endl;
 			/// keep distance
 			double front_s = t3p1help::getFrontS(pos_s, pos_d, lane_sensors);
-			cout << "front s dist: " << front_s << endl;
+			// cout << "front s dist: " << front_s << endl;
 
-			double total_path_size = 20;
-			double buffer = 10;
+			double total_path_size = 50;
+			double buffer = 1;
 			double steps = total_path_size - path_size;
-			double dist_inc = (front_s - buffer)/steps;
+			double dist_inc;
+			/// dist_inc = max_dist_inc;
+			dist_inc = (front_s - buffer)/steps;
 			if (dist_inc > max_dist_inc) {
 				dist_inc = max_dist_inc;
 			}
+			cout << "dist_inc= " << dist_inc << endl;
 			for (int i = 0; i < steps; i++) {
                 pos_s += dist_inc;
                 cout << "new fre: [" << pos_s << ", " << pos_d << "]" << std::endl;
@@ -321,6 +337,11 @@ int main() {
           	    /// pos_x += (dist_inc) * cos(angle+(i+1)*(pi()/100));
           	    /// pos_y += (dist_inc) * sin(angle+(i+1)*(pi()/100));
           	}
+
+			previous_s = pos_s;
+            if (previous_s > t3p1help::MAX_S) {
+				previous_s -= t3p1help::MAX_S;
+			}
 
           	msgJson["next_x"] = next_x_vals;
           	msgJson["next_y"] = next_y_vals;
