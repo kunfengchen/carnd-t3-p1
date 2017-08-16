@@ -72,7 +72,11 @@ if (dist_inc > max_dist_inc) {
     dist_inc = max_dist_inc;
 }
 ```
+
 The front_s will get the distance of in Frent s from the car ahead in the same lane. dist_inc is adjusted accordingly to keep a buffer distance.
+The car is not driving smooth due to the sparse waypoints provided by the [hightway_map.csv](data/highway_map.csv). Will use spilne.h to smooth the trajectory.
+
+### Flowering Path Planning Walkthrough Video
 
 
 ## Third Party Library
