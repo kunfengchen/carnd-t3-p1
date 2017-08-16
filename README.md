@@ -1,6 +1,9 @@
 # carnd-t3-p1
 CarND Path Planning Project
 
+## Starter Code Cloned from Udacity
+https://github.com/udacity/CarND-Path-Planning-Project
+
 ## Simulator
 You can donwload the simulator here: https://github.com/udacity/self-driving-car-sim/releases
 
