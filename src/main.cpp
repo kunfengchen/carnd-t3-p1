@@ -294,39 +294,40 @@ int main() {
 			double ref_y_pre;
 
 			if (pre_size < 2) {
-                cout << " pre_size is smaller than 2!" << endl;
 				pre_car_x = car_x - cos(car_yaw);
 				pre_car_y = car_y - sin(car_yaw);
 
-				// ptsx.push_back(car_x);
-				// ptsy.push_back(car_y);
-				// ptsx.push_back(pre_car_x);
-				// ptsy.push_back(pre_car_y);
+				/// NOT always monotonic!
+				/// BUG ptsx.push_back(car_x);
+				/// BUG ptsy.push_back(car_y);
+				/// BUG ptsx.push_back(pre_car_x);
+				/// BUG ptsy.push_back(pre_car_y);
 			} else {
 				ref_x = previous_path_x[pre_size - 1];
 				ref_y = previous_path_y[pre_size - 1];
                 ref_x_pre = previous_path_x[pre_size - 2];
 				ref_y_pre = previous_path_y[pre_size - 2];
-				/// ref_yaw = atan2(ref_y - ref_y_pre, ref_x - ref_x_pre);
+				ref_yaw = atan2(ref_y - ref_y_pre, ref_x - ref_x_pre);
 
-				ptsx.push_back(ref_x);
-				ptsy.push_back(ref_y);
 				ptsx.push_back(ref_x_pre);
 				ptsy.push_back(ref_y_pre);
+				ptsx.push_back(ref_x);
+				ptsy.push_back(ref_y);
 			}
 
 			vector<double> next_waypoint0 =
-					getXY(car_s+30, t3p1help::get_d_from_lane(p_state.lane_num),
+					// getXY(car_s+30, t3p1help::get_d_from_lane(p_state.lane_num),
+					getXY(car_s+30, 6,
 						  map_waypoints_s,
 					      map_waypoints_x,
 					      map_waypoints_y);
             vector<double> next_waypoint1 =
-					getXY(car_s+60, t3p1help::get_d_from_lane(p_state.lane_num),
+						  getXY(car_s+60, 6,
 						  map_waypoints_s,
 					      map_waypoints_x,
 					      map_waypoints_y);
             vector<double> next_waypoint2 =
-					getXY(car_s+90, t3p1help::get_d_from_lane(p_state.lane_num),
+						  getXY(car_s+90, 6,
 						  map_waypoints_s,
 					      map_waypoints_x,
 					      map_waypoints_y);
@@ -341,49 +342,55 @@ int main() {
 			// transform coordinates to car's
             double local_x;
 			double local_y;
+			cout << "ref_x: " << ref_x << ", ref_y: " << ref_y << endl;
             for (int i=0; i < ptsx.size(); i++) {
 				local_x = ptsx[i] - ref_x;
 				local_y = ptsy[i] - ref_y;
+				cout << "ptsx[" << i << "]=" << ptsx[i]
+					 << ", ptsy[" << i << "]=" << ptsy[i] << endl;
+				cout << "local_x: " << local_x << ", local_y: " << local_y << endl;
 				ptsx[i] = local_x * cos(0 - ref_yaw) - local_y * sin(0-ref_yaw);
 				ptsy[i] = local_x * sin(0 - ref_yaw) + local_y * cos(0-ref_yaw);
 				cout << "ptsx[" << i << "]=" << ptsx[i]
-					 << ", ptsy[" << i << "]=" << ptsy[i] << endl;
+					 << ", ptsy[" << i << "]=" << ptsy[i] << endl << endl;
 			}
 
 			// push back previous waypoints
 			for (int i=0; i < pre_size; i++) {
+				// cout << "previous_path_x[" << i << "]=" << previous_path_x[i]
+				// 	 << ", previous_path_y[" << i << "]=" << previous_path_y[i] << endl;
 				next_x_vals.push_back(previous_path_x[i]);
 				next_y_vals.push_back(previous_path_y[i]);
 			}
 
+			// Idea from Path Planning Walkthrough Video
+			// Generating the path in car coordinates, instead of simulator/global or
+			// Frenet coordinates. Frenet doesn't have linear one-to-one translation to the
+			// global coordinates. That will cause coarse resolutions that produce
+			// jitters and jerks.
 			tk::spline spline;
 			spline.set_points(ptsx, ptsy);
 
-			double target_x = 30.0;
-			double target_y = spline(target_x);
-			double target_dist = sqrt(target_x*target_x+target_y*target_y);
+			double horizon_x = 30.0;
+			double horizon_y = spline(horizon_x);
+			double horizon_dist = sqrt(horizon_x*horizon_x+horizon_y*horizon_y);
 
-			double next_x = 0;
+			// 1 meter per second = 2.3694 miles per hour
+			double steps_x = (horizon_dist/(0.02*p_state.ref_velocity/2.24));
+            double step_x = horizon_x/steps_x;
+			double global_x, global_y;
+			local_x = 0;
 
-			double steps;
-			double point_x;
-			double point_y;
-			for (int i=0; i <50-pre_size; i++) {
-				steps = (target_dist / (0.2 * p_state.ref_velocity / 2.24));
-				point_x = next_x + (target_x)/steps;
-				point_y = spline(point_x);
-				next_x = point_x;
+			for (int i=1; i <= 50-pre_size; i++) {
+				local_x += step_x;
+				local_y = spline(local_x);
 
                 // transform back to global coordinates
-				double x_ref = point_x;
-				double y_ref = point_y;
-                point_x = (x_ref * cos(ref_yaw)) - y_ref * sin(ref_yaw);
-				point_y = (x_ref * sin(ref_yaw)) + y_ref * cos(ref_yaw);
-				point_x += ref_x;
-				point_y += ref_y;
+                global_x = ref_x + (local_x * cos(ref_yaw)) - local_y * sin(ref_yaw);
+				global_y = ref_y + (local_x * sin(ref_yaw)) + local_y * cos(ref_yaw);
 
-				next_x_vals.push_back(point_x);
-				next_y_vals.push_back(point_y);
+				next_x_vals.push_back(global_x);
+				next_y_vals.push_back(global_y);
 			}
 
 			/// keep distance
