@@ -1,4 +1,10 @@
 # carnd-t3-p1
+CarND Path Planning Project
+
+## Simulator
+You can donwload the simulator here: https://github.com/udacity/self-driving-car-sim/releases
+
+
 
 ## Generating the path
 ### Fisrt of all, generate the path flowing the map waypoints
@@ -74,3 +80,4 @@ The front_s will get the distance of in Frent s from the car ahead in the same l
 
 ## References
 * (https://medium.com/@mohankarthik/path-planning-in-highways-for-an-autonomous-vehicle-242b91e6387d)
+* [Path Planning Walkthrough Video](https://www.youtube.com/watch?v=3QP3hJHm4WM&feature=youtu.be)
