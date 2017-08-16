@@ -1,4 +1,13 @@
 # carnd-t3-p1
+CarND Path Planning Project
+
+## Starter Code Cloned from Udacity
+https://github.com/udacity/CarND-Path-Planning-Project
+
+## Simulator
+You can donwload the simulator here: https://github.com/udacity/self-driving-car-sim/releases
+
+
 
 ## Generating the path
 ### Fisrt of all, generate the path flowing the map waypoints
@@ -66,7 +75,11 @@ if (dist_inc > max_dist_inc) {
     dist_inc = max_dist_inc;
 }
 ```
+
 The front_s will get the distance of in Frent s from the car ahead in the same lane. dist_inc is adjusted accordingly to keep a buffer distance.
+The car is not driving smooth due to the sparse waypoints provided by the [hightway_map.csv](data/highway_map.csv). Will use spilne.h to smooth the trajectory.
+
+### Flowering Path Planning Walkthrough Video
 
 
 ## Third Party Library
@@ -74,3 +87,4 @@ The front_s will get the distance of in Frent s from the car ahead in the same l
 
 ## References
 * (https://medium.com/@mohankarthik/path-planning-in-highways-for-an-autonomous-vehicle-242b91e6387d)
+* [Path Planning Walkthrough Video](https://www.youtube.com/watch?v=3QP3hJHm4WM&feature=youtu.be)
