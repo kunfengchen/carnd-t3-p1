@@ -15,6 +15,13 @@ using Eigen::VectorXd;
 namespace t3p1help {
     const double MAX_S = 6914.14925765991;
 
+    struct planner_state {
+        bool isConnected = false;
+        int onMessageCount = 0;
+        int lane_num = 1;
+        double ref_velocity = 0.0;
+    } planner_state_t;
+
     /**
      * Return the lane number
      * @param d The d of Frenet coordinates
@@ -30,6 +37,15 @@ namespace t3p1help {
             r = 2;
         }
         return r;
+    }
+
+    /**
+     * Get the Frenet d from lane number
+     * @param lane
+     * @return d
+     */
+    double get_d_from_lane(int lane) {
+        return 2 + 4*lane;
     }
 
     /**
@@ -145,6 +161,17 @@ namespace t3p1help {
 
         return result;
 
+    }
+
+    double eval_poly(std::vector<double> poly, double x) {
+        int size = poly.size();
+        double ret = poly[0];
+        double p = 1;
+        for (int i = 1; i < size; i++) {
+            p *= x;
+            ret += poly[i]*p;
+        }
+        return ret;
     }
 
 }

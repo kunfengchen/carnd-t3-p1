@@ -200,22 +200,28 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
 
-  tk::spline map_spline;
-  int n = 80;
-  vector<double> subx(map_waypoints_x.begin(), map_waypoints_x.begin() + n);
-  vector<double> suby(map_waypoints_y.begin(), map_waypoints_y.begin() + n);
+  ///// tk::spline map_spline;
+  ///// int n = 80;
+  ///// vector<double> subx(map_waypoints_x.begin(), map_waypoints_x.begin() + n);
+  ///// vector<double> suby(map_waypoints_y.begin(), map_waypoints_y.begin() + n);
 
-  /// KFC map_spline.set_points(subx, suby);
-  double previous_s = -1; // idea from class slack. since end_path_s is not correct regularly.
+  ///// KFC map_spline.set_points(subx, suby);
+  struct t3p1help::planner_state p_state;
+
+  p_state.lane_num = 1;
+  p_state.ref_velocity = 49.3;
 
   ///// h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
-  h.onMessage([&previous_s,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
-                     uWS::OpCode opCode) {
+  h.onMessage([&p_state,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
+					  &map_waypoints_dx,&map_waypoints_dy]
+					  (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+                       uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     //auto sdata = string(data).substr(0, length);
     //cout << sdata << endl;
+
     if (length && length > 2 && data[0] == '4' && data[1] == '2') {
 
       auto s = hasData(data);
@@ -226,7 +232,13 @@ int main() {
         string event = j[0].get<string>();
         
         if (event == "telemetry") {
-          // j[1] is the data JSON object
+			/// debug
+			cout << "onMessage #: " << p_state.onMessageCount << endl;
+			if (p_state.onMessageCount > 1000) {
+				exit(-1);
+			}
+
+          // j[1] is the dajta JSON object
           
         	// Main car's localization Data
           	double car_x = j[1]["x"];
@@ -244,7 +256,10 @@ int main() {
           	double end_path_d = j[1]["end_path_d"];
 
           	// Sensor Fusion Data, a list of all other cars on the same side of the road.
+			// vector<vector<double>>
           	auto sensor_fusion = j[1]["sensor_fusion"];
+
+			int prev_size = previous_path_x.size();
 
           	json msgJson;
 
@@ -262,86 +277,121 @@ int main() {
 				// t3p1help::print_sensors(lane);
 			// }
 
-          	double pos_x;
-          	double pos_y;
-          	double angle;
-          	int path_size = previous_path_x.size();
+          	/// double pos_x;
+          	/// double pos_y;
+          	/// double angle;
+          	int pre_size = previous_path_x.size();
 
-          	for (int i = 0; i < path_size ; i++) {
-          	    next_x_vals.push_back(previous_path_x[i]);
-          	    next_y_vals.push_back(previous_path_y[i]);
-          	}
+			vector<double> ptsx;
+			vector<double> ptsy;
 
-			cout << "remain path size: " << path_size << std::endl;
-          	if (path_size == 0) {
-          	    pos_x = car_x;
-          	    pos_y = car_y;
-          	    angle = deg2rad(car_yaw);
-          	} else {
-          	    pos_x = previous_path_x[path_size-1];
-          	    pos_y = previous_path_y[path_size-1];
-          	    double pos_x2 = previous_path_x[path_size-2];
-          	    double pos_y2 = previous_path_y[path_size-2];
-          	    angle = atan2(pos_y - pos_y2, pos_x - pos_x2);
-          	}
+			double ref_x = car_x;
+			double ref_y = car_y;
+			double ref_yaw = deg2rad(car_yaw);
+            double pre_car_x;
+			double pre_car_y;
+            double ref_x_pre;
+			double ref_y_pre;
 
-			// Fill in new path
-			// int next_point = NextWaypoint(car_x, car_y, angle, map_waypoints_x, map_waypoints_y);
+			if (pre_size < 2) {
+                cout << " pre_size is smaller than 2!" << endl;
+				pre_car_x = car_x - cos(car_yaw);
+				pre_car_y = car_y - sin(car_yaw);
 
-          	// double dist_inc = 0.5;
-			double max_dist_inc = 0.4;
-			vector<double> pos_frenet;
-			vector<double> pos_lane;
-			pos_lane = {pos_x, pos_y};
-			pos_frenet = getFrenet(pos_lane[0], pos_lane[1], angle, map_waypoints_x, map_waypoints_y);
-            double pos_s;
-            if (path_size == 0) {
-				cout << "path size is 0." << endl;
-                ///// NOTE end_path_s is 0 here!!!
-				pos_s = pos_frenet[0];
+				// ptsx.push_back(car_x);
+				// ptsy.push_back(car_y);
+				// ptsx.push_back(pre_car_x);
+				// ptsy.push_back(pre_car_y);
 			} else {
-				// pos_s = end_path_s;
-				pos_s = previous_s;
-			}
-			double pos_d = 10; // pos_frenet[1];
+				ref_x = previous_path_x[pre_size - 1];
+				ref_y = previous_path_y[pre_size - 1];
+                ref_x_pre = previous_path_x[pre_size - 2];
+				ref_y_pre = previous_path_y[pre_size - 2];
+				/// ref_yaw = atan2(ref_y - ref_y_pre, ref_x - ref_x_pre);
 
-			///// NOTE: x_to_s will jump ahead regularly!!!
-			cout << "end_path_s: " << end_path_s
-				 << " x_to_s: " << pos_frenet[0]
-				 << " previous_s: " << previous_s << endl;
+				ptsx.push_back(ref_x);
+				ptsy.push_back(ref_y);
+				ptsx.push_back(ref_x_pre);
+				ptsy.push_back(ref_y_pre);
+			}
+
+			vector<double> next_waypoint0 =
+					getXY(car_s+30, t3p1help::get_d_from_lane(p_state.lane_num),
+						  map_waypoints_s,
+					      map_waypoints_x,
+					      map_waypoints_y);
+            vector<double> next_waypoint1 =
+					getXY(car_s+60, t3p1help::get_d_from_lane(p_state.lane_num),
+						  map_waypoints_s,
+					      map_waypoints_x,
+					      map_waypoints_y);
+            vector<double> next_waypoint2 =
+					getXY(car_s+90, t3p1help::get_d_from_lane(p_state.lane_num),
+						  map_waypoints_s,
+					      map_waypoints_x,
+					      map_waypoints_y);
+
+			ptsx.push_back(next_waypoint0[0]);
+			ptsy.push_back(next_waypoint0[1]);
+			ptsx.push_back(next_waypoint1[0]);
+			ptsy.push_back(next_waypoint1[1]);
+			ptsx.push_back(next_waypoint2[0]);
+			ptsy.push_back(next_waypoint2[1]);
+
+			// transform coordinates to car's
+            double local_x;
+			double local_y;
+            for (int i=0; i < ptsx.size(); i++) {
+				local_x = ptsx[i] - ref_x;
+				local_y = ptsy[i] - ref_y;
+				ptsx[i] = local_x * cos(0 - ref_yaw) - local_y * sin(0-ref_yaw);
+				ptsy[i] = local_x * sin(0 - ref_yaw) + local_y * cos(0-ref_yaw);
+				cout << "ptsx[" << i << "]=" << ptsx[i]
+					 << ", ptsy[" << i << "]=" << ptsy[i] << endl;
+			}
+
+			// push back previous waypoints
+			for (int i=0; i < pre_size; i++) {
+				next_x_vals.push_back(previous_path_x[i]);
+				next_y_vals.push_back(previous_path_y[i]);
+			}
+
+			tk::spline spline;
+			spline.set_points(ptsx, ptsy);
+
+			double target_x = 30.0;
+			double target_y = spline(target_x);
+			double target_dist = sqrt(target_x*target_x+target_y*target_y);
+
+			double next_x = 0;
+
+			double steps;
+			double point_x;
+			double point_y;
+			for (int i=0; i <50-pre_size; i++) {
+				steps = (target_dist / (0.2 * p_state.ref_velocity / 2.24));
+				point_x = next_x + (target_x)/steps;
+				point_y = spline(point_x);
+				next_x = point_x;
+
+                // transform back to global coordinates
+				double x_ref = point_x;
+				double y_ref = point_y;
+                point_x = (x_ref * cos(ref_yaw)) - y_ref * sin(ref_yaw);
+				point_y = (x_ref * sin(ref_yaw)) + y_ref * cos(ref_yaw);
+				point_x += ref_x;
+				point_y += ref_y;
+
+				next_x_vals.push_back(point_x);
+				next_y_vals.push_back(point_y);
+			}
+
 			/// keep distance
-			double front_s = t3p1help::getFrontS(pos_s, pos_d, lane_sensors);
+			/// double front_s = t3p1help::getFrontS(pos_s, pos_d, lane_sensors);
 			// cout << "front s dist: " << front_s << endl;
 
-			double total_path_size = 50;
-			double buffer = 1;
-			double steps = total_path_size - path_size;
-			double dist_inc;
-			/// dist_inc = max_dist_inc;
-			dist_inc = (front_s - buffer)/steps;
-			if (dist_inc > max_dist_inc) {
-				dist_inc = max_dist_inc;
-			}
-			cout << "dist_inc= " << dist_inc << endl;
-			for (int i = 0; i < steps; i++) {
-                pos_s += dist_inc;
-                cout << "new fre: [" << pos_s << ", " << pos_d << "]" << std::endl;
-				pos_lane = getXY(pos_s, pos_d,
-								 map_waypoints_s, map_waypoints_x, map_waypoints_y);
-                // cout << "new pos: (" << pos_lane[0] << ", " << pos_lane[1] << ")" << std::endl;
-				next_x_vals.push_back(pos_lane[0]);
-				next_y_vals.push_back(pos_lane[1]);
-
-          	    /// next_x_vals.push_back(pos_x+(dist_inc) * cos(angle+(i+1)*(pi()/100)));
-                /// next_y_vals.push_back(pos_y+(dist_inc) * sin(angle+(i+1)*(pi()/100)));
-          	    /// pos_x += (dist_inc) * cos(angle+(i+1)*(pi()/100));
-          	    /// pos_y += (dist_inc) * sin(angle+(i+1)*(pi()/100));
-          	}
-
-			previous_s = pos_s;
-            if (previous_s > t3p1help::MAX_S) {
-				previous_s -= t3p1help::MAX_S;
-			}
+			/// p_state.pre_s -= t3p1help::MAX_S;
+            /// p_state.onMessageCount++;
 
           	msgJson["next_x"] = next_x_vals;
           	msgJson["next_y"] = next_y_vals;
