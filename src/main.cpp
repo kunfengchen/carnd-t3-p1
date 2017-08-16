@@ -209,7 +209,8 @@ int main() {
   struct t3p1help::planner_state p_state;
 
   p_state.lane_num = 1;
-  p_state.ref_velocity = 49.3;
+  // p_state.ref_velocity = 49.3;
+  p_state.ref_velocity = 0.0;
 
   ///// h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
   h.onMessage([&p_state,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
@@ -233,7 +234,7 @@ int main() {
         
         if (event == "telemetry") {
 			/// debug
-			cout << "onMessage #: " << p_state.onMessageCount << endl;
+			// cout << "onMessage #: " << p_state.onMessageCount << endl;
 			if (p_state.onMessageCount > 1000) {
 				exit(-1);
 			}
@@ -282,6 +283,41 @@ int main() {
           	/// double angle;
           	int pre_size = previous_path_x.size();
 
+			if (pre_size >0) {
+				car_s = end_path_s;
+			}
+
+			bool too_close = false;
+
+			for (int i=0; i < sensor_fusion.size(); i++) {
+				float d = sensor_fusion[i][6];
+				if (d < (2+4*p_state.lane_num+2) && d > (2+4*p_state.lane_num-2)) {
+					double vx = sensor_fusion[i][3];
+					double vy = sensor_fusion[i][4];
+					double check_speed = sqrt(vx*vx + vy*vy);
+					double check_car_s = sensor_fusion[i][5];
+
+					check_car_s+=((double)pre_size*0.02*check_speed);
+                    // cout << "check_car_s=" << check_car_s << " car_s=" << car_s << endl;
+					if ((check_car_s > car_s) && ((check_car_s-car_s) < 30)) {
+                        cout << "too close!" << endl;
+						too_close = true;
+
+						if (p_state.lane_num > 0) {
+							p_state.lane_num = 0;
+						} else if (p_state.lane_num == 0) {
+							p_state.lane_num = 1;
+						}
+					}
+				}
+			}
+
+            if (too_close) {
+				p_state.ref_velocity -= 0.224;
+			} else if (p_state.ref_velocity < 49.5) {
+				p_state.ref_velocity += 0.224;
+			}
+
 			vector<double> ptsx;
 			vector<double> ptsy;
 
@@ -297,11 +333,11 @@ int main() {
 				pre_car_x = car_x - cos(car_yaw);
 				pre_car_y = car_y - sin(car_yaw);
 
-				/// NOT always monotonic!
-				/// BUG ptsx.push_back(car_x);
-				/// BUG ptsy.push_back(car_y);
-				/// BUG ptsx.push_back(pre_car_x);
-				/// BUG ptsy.push_back(pre_car_y);
+				/// NOT always monotonic, depends on the starting location!
+				ptsx.push_back(pre_car_x);
+				ptsy.push_back(pre_car_y);
+				ptsx.push_back(car_x);
+				ptsy.push_back(car_y);
 			} else {
 				ref_x = previous_path_x[pre_size - 1];
 				ref_y = previous_path_y[pre_size - 1];
@@ -316,18 +352,17 @@ int main() {
 			}
 
 			vector<double> next_waypoint0 =
-					// getXY(car_s+30, t3p1help::get_d_from_lane(p_state.lane_num),
-					getXY(car_s+30, 6,
+					getXY(car_s+30, t3p1help::get_d_from_lane(p_state.lane_num),
 						  map_waypoints_s,
 					      map_waypoints_x,
 					      map_waypoints_y);
             vector<double> next_waypoint1 =
-						  getXY(car_s+60, 6,
+					getXY(car_s+60, t3p1help::get_d_from_lane(p_state.lane_num),
 						  map_waypoints_s,
 					      map_waypoints_x,
 					      map_waypoints_y);
             vector<double> next_waypoint2 =
-						  getXY(car_s+90, 6,
+					getXY(car_s+90, t3p1help::get_d_from_lane(p_state.lane_num),
 						  map_waypoints_s,
 					      map_waypoints_x,
 					      map_waypoints_y);
@@ -342,17 +377,17 @@ int main() {
 			// transform coordinates to car's
             double local_x;
 			double local_y;
-			cout << "ref_x: " << ref_x << ", ref_y: " << ref_y << endl;
+			// cout << "ref_x: " << ref_x << ", ref_y: " << ref_y << endl;
             for (int i=0; i < ptsx.size(); i++) {
 				local_x = ptsx[i] - ref_x;
 				local_y = ptsy[i] - ref_y;
-				cout << "ptsx[" << i << "]=" << ptsx[i]
-					 << ", ptsy[" << i << "]=" << ptsy[i] << endl;
-				cout << "local_x: " << local_x << ", local_y: " << local_y << endl;
+				/// cout << "ptsx[" << i << "]=" << ptsx[i]
+				///	 << ", ptsy[" << i << "]=" << ptsy[i] << endl;
+				/// cout << "local_x: " << local_x << ", local_y: " << local_y << endl;
 				ptsx[i] = local_x * cos(0 - ref_yaw) - local_y * sin(0-ref_yaw);
 				ptsy[i] = local_x * sin(0 - ref_yaw) + local_y * cos(0-ref_yaw);
-				cout << "ptsx[" << i << "]=" << ptsx[i]
-					 << ", ptsy[" << i << "]=" << ptsy[i] << endl << endl;
+				/// cout << "ptsx[" << i << "]=" << ptsx[i]
+				/// 	 << ", ptsy[" << i << "]=" << ptsy[i] << endl << endl;
 			}
 
 			// push back previous waypoints
@@ -371,7 +406,7 @@ int main() {
 			tk::spline spline;
 			spline.set_points(ptsx, ptsy);
 
-			double horizon_x = 30.0;
+			double horizon_x = 30.0; // meters
 			double horizon_y = spline(horizon_x);
 			double horizon_dist = sqrt(horizon_x*horizon_x+horizon_y*horizon_y);
 

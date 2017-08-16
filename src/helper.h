@@ -19,6 +19,7 @@ namespace t3p1help {
         bool isConnected = false;
         int onMessageCount = 0;
         int lane_num = 1;
+        // velocity in mph, mile per hour
         double ref_velocity = 0.0;
     } planner_state_t;
 
