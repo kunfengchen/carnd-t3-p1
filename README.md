@@ -80,6 +80,12 @@ The front_s will get the distance of in Frent s from the car ahead in the same l
 The car is not driving smooth due to the sparse waypoints provided by the [hightway_map.csv](data/highway_map.csv). Will use spilne.h to smooth the trajectory.
 
 ### Flowering Path Planning Walkthrough Video
+#### Good ideas learn from the video
+* Provided getFrent() and getXY() transform back and forth are not one-to-one mapped. There are transformation losese that cause webbing and jittering. Instea of transforming every points from Frent, better way to do it is choose few Frent herizon points and transform those to global coordinates using getXY(). And use the few global horizon pionts and transform them into car local coodinates. And then use the few local horizon points to setup the spline function for granunaer local way points, that follow the map.
+
+* The resulting spline is already jerk free, provided that local way points is short enough.
+* Next import idea is the distance for new local waypoints
+  
 
 
 ## Third Party Library
