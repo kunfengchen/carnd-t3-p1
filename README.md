@@ -130,6 +130,10 @@ The car is not driving smooth due to the sparse waypoints provided by the [hight
       * If no safe lane to move to, stay in the same lane
   * The avearge Best Miles without incidents is 15 miles
 
+## Other Things to Try
+* Use Jerk Minimizing Trajectory (JMT)
+* Use cost functions for prioritizing behaviors
+* Use state machine for car state, like Constant Speed, Changing Lane, Preparing Changing Lane...
 
 ## Third Party Library
 * [spline tool](http://kluge.in-chemnitz.de/opensource/spline/)
