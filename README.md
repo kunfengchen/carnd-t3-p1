@@ -85,12 +85,19 @@ The car is not driving smooth due to the sparse waypoints provided by the [hight
 
 * The resulting spline is already jerk free, provided that local way points is short enough.
 * Next import idea is the distance for new local waypoints
-  
+** The default number of herizon waypoints is 50. 
+** The delta time between waypoint is fixed 0.02 seconds.
+** The herizon distance is 30 meters
+
+* To caculate the step in x direction
+```
+double steps_x = (horizon_dist/(p_state.point_dt*p_state.ref_velocity/t3p1help::MPS_TO_MPH));
+double step_x = horizon_x/steps_x;
+```
 
 
 ## Third Party Library
 * [spline tool](http://kluge.in-chemnitz.de/opensource/spline/)
 
 ## References
-* (https://medium.com/@mohankarthik/path-planning-in-highways-for-an-autonomous-vehicle-242b91e6387d)
 * [Path Planning Walkthrough Video](https://www.youtube.com/watch?v=3QP3hJHm4WM&feature=youtu.be)
