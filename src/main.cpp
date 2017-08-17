@@ -200,16 +200,10 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
 
-  ///// tk::spline map_spline;
-  ///// int n = 80;
-  ///// vector<double> subx(map_waypoints_x.begin(), map_waypoints_x.begin() + n);
-  ///// vector<double> suby(map_waypoints_y.begin(), map_waypoints_y.begin() + n);
-
-  ///// KFC map_spline.set_points(subx, suby);
+  // the planner state
   struct t3p1help::planner_state p_state;
 
   p_state.lane_num = 1;
-  // p_state.ref_velocity = 49.3;
   p_state.ref_velocity = 0.0;
 
   ///// h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
@@ -233,12 +227,6 @@ int main() {
         string event = j[0].get<string>();
         
         if (event == "telemetry") {
-			/// debug
-			// cout << "onMessage #: " << p_state.onMessageCount << endl;
-			if (p_state.onMessageCount > 1000) {
-				exit(-1);
-			}
-
           // j[1] is the dajta JSON object
           
         	// Main car's localization Data
@@ -268,56 +256,47 @@ int main() {
           	vector<double> next_y_vals;
 
 
-          	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
+          	// DONE: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
             /// Starter code provided from the lecture
 
 			auto lane_sensors = t3p1help::sortSensor(sensor_fusion);
 			/// Print the sensor_fusion info
-			// for  (auto lane : lanes) {
-				// cout << "lane sensors:" << endl;
-				// t3p1help::print_sensors(lane);
+			// for (auto lane : lanes) {
+			//     cout << "lane sensors:" << endl;
+			//     t3p1help::printSensors(lane);
 			// }
 
-          	/// double pos_x;
-          	/// double pos_y;
-          	/// double angle;
           	int pre_size = previous_path_x.size();
+			// The right time for generating the additional path;
+			double time_ahead = pre_size * 0.02;
 
 			if (pre_size >0) {
 				car_s = end_path_s;
 			}
 
-			bool too_close = false;
-
-			for (int i=0; i < sensor_fusion.size(); i++) {
-				float d = sensor_fusion[i][6];
-				if (d < (2+4*p_state.lane_num+2) && d > (2+4*p_state.lane_num-2)) {
-					double vx = sensor_fusion[i][3];
-					double vy = sensor_fusion[i][4];
-					double check_speed = sqrt(vx*vx + vy*vy);
-					double check_car_s = sensor_fusion[i][5];
-
-					check_car_s+=((double)pre_size*0.02*check_speed);
-                    // cout << "check_car_s=" << check_car_s << " car_s=" << car_s << endl;
-					if ((check_car_s > car_s) && ((check_car_s-car_s) < 30)) {
-                        cout << "too close!" << endl;
-						too_close = true;
-
-						if (p_state.lane_num > 0) {
-							p_state.lane_num = 0;
-						} else if (p_state.lane_num == 0) {
-							p_state.lane_num = 1;
-						}
-					}
+            ///// Checking the sensors and state
+			///// Adjust the state accordingly
+            // Too close
+			if (t3p1help::tooClose(time_ahead, car_s, car_d, lane_sensors)) {
+				cout << "too close" << endl;
+				int changing_lane = t3p1help::getSafeChangeLane(time_ahead, car_s, car_d, lane_sensors);
+				if (p_state.lane_num == changing_lane) {
+					cout << "Not safe to change lane. Stay in lane " << p_state.lane_num << endl;
+				} else {
+					p_state.lane_num = t3p1help::getSafeChangeLane(time_ahead, car_s, car_d, lane_sensors);
+					cout << "Changing lane to " << p_state.lane_num << endl;
 				}
-			}
 
-            if (too_close) {
 				p_state.ref_velocity -= 0.224;
+				cout << "decreasing speed" << endl;
 			} else if (p_state.ref_velocity < 49.5) {
+				cout << "increasing speed" << endl;
 				p_state.ref_velocity += 0.224;
+			} else {
+				cout << "constant speed" << endl;
 			}
 
+			// Get the horizon way points in global coordinates
 			vector<double> ptsx;
 			vector<double> ptsy;
 
@@ -352,17 +331,17 @@ int main() {
 			}
 
 			vector<double> next_waypoint0 =
-					getXY(car_s+30, t3p1help::get_d_from_lane(p_state.lane_num),
+					getXY(car_s+30, t3p1help::getDFromLane(p_state.lane_num),
 						  map_waypoints_s,
 					      map_waypoints_x,
 					      map_waypoints_y);
             vector<double> next_waypoint1 =
-					getXY(car_s+60, t3p1help::get_d_from_lane(p_state.lane_num),
+					getXY(car_s+60, t3p1help::getDFromLane(p_state.lane_num),
 						  map_waypoints_s,
 					      map_waypoints_x,
 					      map_waypoints_y);
             vector<double> next_waypoint2 =
-					getXY(car_s+90, t3p1help::get_d_from_lane(p_state.lane_num),
+					getXY(car_s+90, t3p1help::getDFromLane(p_state.lane_num),
 						  map_waypoints_s,
 					      map_waypoints_x,
 					      map_waypoints_y);
@@ -427,13 +406,6 @@ int main() {
 				next_x_vals.push_back(global_x);
 				next_y_vals.push_back(global_y);
 			}
-
-			/// keep distance
-			/// double front_s = t3p1help::getFrontS(pos_s, pos_d, lane_sensors);
-			// cout << "front s dist: " << front_s << endl;
-
-			/// p_state.pre_s -= t3p1help::MAX_S;
-            /// p_state.onMessageCount++;
 
           	msgJson["next_x"] = next_x_vals;
           	msgJson["next_y"] = next_y_vals;

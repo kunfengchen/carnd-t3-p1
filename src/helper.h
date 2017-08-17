@@ -1,6 +1,3 @@
-//
-// Created by kchen on 8/4/17.
-//
 
 #ifndef CARND_T3_P1_HELPER_H
 #define CARND_T3_P1_HELPER_H
@@ -15,9 +12,11 @@ using Eigen::VectorXd;
 namespace t3p1help {
     const double MAX_S = 6914.14925765991;
 
+    /**
+     * Keep the state for the planner.
+     */
     struct planner_state {
-        bool isConnected = false;
-        int onMessageCount = 0;
+        // current car lane
         int lane_num = 1;
         // velocity in mph, mile per hour
         double ref_velocity = 0.0;
@@ -28,7 +27,7 @@ namespace t3p1help {
      * @param d The d of Frenet coordinates
      * @return lane number
      */
-    int get_lane_from_d( double d) {
+    int getLaneFromD(double d) {
         int r;
         if (d < 4) { // inner lane
             r = 0;
@@ -45,7 +44,7 @@ namespace t3p1help {
      * @param lane
      * @return d
      */
-    double get_d_from_lane(int lane) {
+    double getDFromLane(int lane) {
         return 2 + 4*lane;
     }
 
@@ -58,7 +57,7 @@ namespace t3p1help {
         std::vector<std::vector<double>> lane0, lane1, lane2;
         for (auto car: sensors) {
             d = car[6];
-            switch (get_lane_from_d(d)) {
+            switch (getLaneFromD(d)) {
             case 0: // inner lane
                 lane0.push_back(car);
                 break;
@@ -77,7 +76,7 @@ namespace t3p1help {
      * Print the sensor fusion data
      * @param sensors
      */
-    void print_sensors(std::vector<std::vector<double>> sensors) {
+    void printSensors(std::vector<std::vector<double>> sensors) {
         for (auto car: sensors) {
             for (double info : car) {
                 std::cout << info << ", ";
@@ -88,31 +87,116 @@ namespace t3p1help {
 
     /**
      * Get the Frenet s distance ahead
+     * @param time_ahead
      * @param car_s
      * @param car_d
      * @param range
      * @return
      */
-    double getFrontS(double car_s, double car_d,
+    double getFrontDistS(double time_ahead, double car_s, double car_d,
                      const std::vector<std::vector<std::vector<double>>> lane_sensors) {
         double min_dist = MAX_S;
-        int car_lane = get_lane_from_d(car_d);
+        int car_lane = getLaneFromD(car_d);
         double dist;
+        double v_x, v_y, sen_speed, sen_s;
         for (auto car: lane_sensors[car_lane]) {
             dist = car[5] - car_s;
+            v_x = car[3];
+            v_y = car[4];
+            sen_speed = sqrt(v_x*v_x + v_y*v_y);
+
+            dist += time_ahead * sen_speed;
             if (dist < 0) { // the sensored car is behind
                 if (dist < (50 - MAX_S)) {
                     // S looped around
                     dist += MAX_S;
                 }
             }
-            if (dist > 0) {
+            if (dist >= 0) {
                 if (dist < min_dist) {
                     min_dist = dist;
                 }
             }
         }
         return min_dist;
+    }
+
+    /**
+     * Check if there is enough of space for changing lane
+     * @param time_ahead The time in the future to check
+     * @param car_s
+     * @param car_d
+     * @return
+     */
+    bool hasSafeDistLane(double time_ahead, double car_s, double car_d,
+                     const std::vector<std::vector<std::vector<double>>> lane_sensors) {
+        int check_lane = getLaneFromD(car_d);
+        double dist;
+        double v_x, v_y, sen_speed, sen_s;
+        for (auto car: lane_sensors[check_lane]) {
+            dist = car[5] - car_s;
+            v_x = car[3];
+            v_y = car[4];
+            sen_speed = sqrt(v_x*v_x + v_y*v_y);
+
+            dist += time_ahead * sen_speed;
+            if (dist >= 0 ) { // sensored car infront
+                if (dist < 21) {
+                    std::cout << "short front dist " << dist << std::endl;
+                    return false;
+                }
+            } else { // sensored car behind
+                if (dist > -10) {
+                    std::cout << "short back dist " << dist << std::endl;
+                    return false;
+                }
+
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Detect if car infront is too close
+     * @param time_ahead
+     * @param car_s
+     * @param cars_d
+     * @return
+     */
+    bool tooClose(double time_ahead, double car_s, double car_d,
+                  const std::vector<std::vector<std::vector<double>>> lane_sensors) {
+        double front_dist_s = getFrontDistS(time_ahead, car_s, car_d, lane_sensors);
+        bool ret = false;
+        if (front_dist_s < 20) {
+            ret = true;
+        }
+        return ret;
+    }
+
+    /**
+     * Get the next safe changing lane
+     * @param time_ahead
+     * @param car_s
+     * @param cars_d
+     * @return
+     */
+    int getSafeChangeLane(double time_ahead, double car_s, double car_d,
+                      const std::vector<std::vector<std::vector<double>>> lane_sensors) {
+        int cur_lane = getLaneFromD(car_d);
+        int safe_lane = cur_lane;
+        if (cur_lane == 0 || cur_lane == 2) {
+            // if (!tooClose(car_s+3, getDFromLane(1), lane_sensors)) {
+            if (hasSafeDistLane(time_ahead, car_s, getDFromLane(1), lane_sensors)) {
+                safe_lane = 1;
+            }
+        } else if (cur_lane == 1) {
+            if (hasSafeDistLane(time_ahead, car_s, getDFromLane(0), lane_sensors)) {
+                safe_lane = 0;
+            } else if (hasSafeDistLane(time_ahead, car_s, getDFromLane(2), lane_sensors)) {
+                safe_lane = 2;
+            }
+        }
+        return safe_lane;
     }
 
     /** JMT source code from Udacity: Implement Quintic Polynomial Solver Solution
