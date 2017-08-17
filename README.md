@@ -122,6 +122,13 @@ The car is not driving smooth due to the sparse waypoints provided by the [hight
   
 ### Behavior Planning
 * Very basic implementation
+  * Increase the speed by speed_step to speed limit
+  * Keep the constant limit speed
+  * If a car infront withn 30 meters (too close)
+    * Decrease the speed, and
+    * Change to next lane if safe to do so
+      * If no safe lane to move to, stay in the same lane.
+      
 
 ## Third Party Library
 * [spline tool](http://kluge.in-chemnitz.de/opensource/spline/)
