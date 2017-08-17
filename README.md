@@ -101,9 +101,18 @@ The car is not driving smooth due to the sparse waypoints provided by the [hight
   local_y = spline(local_x);
   ```
   Note that local_y is from the spline function that has the perfect curve.
-
-
-
+  
+* Increase speed by velocity_step = 0.224 when limit_velocity = 49.5 is not reached.
+* Decrease speed by velocity_step when the car infront is too close.
+* Very import tip
+  * Need to compare the sesorsed car's location ahead of the time, where the new waypoints are generated.
+  ```
+  // The right time for generating the additional path;
+  double time_ahead = pre_size * p_state.point_dt;
+  ```
+  
+### Behavior Planning
+* Very basic implementation
 
 ## Third Party Library
 * [spline tool](http://kluge.in-chemnitz.de/opensource/spline/)
