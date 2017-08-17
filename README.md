@@ -85,15 +85,24 @@ The car is not driving smooth due to the sparse waypoints provided by the [hight
 
 * The resulting spline is already jerk free, provided that local way points is short enough.
 * Next import idea is the distance for new local waypoints
-** The default number of herizon waypoints is 50. 
-** The delta time between waypoint is fixed 0.02 seconds.
-** The herizon distance is 30 meters
+ * The default number of herizon waypoints is 50. 
+ * The delta time between waypoint is fixed 0.02 seconds.
+ * The herizon distance is 30 meters
 
 * To caculate the step in x direction
 ```
 double steps_x = (horizon_dist/(p_state.point_dt*p_state.ref_velocity/t3p1help::MPS_TO_MPH));
 double step_x = horizon_x/steps_x;
 ```
+
+* To caculate the next local waypoints
+```
+local_x += step_x;
+local_y = spline(local_x);
+```
+Note that local_y is from the spline function that has the perfect curve.
+
+* 
 
 
 ## Third Party Library
