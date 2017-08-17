@@ -110,6 +110,15 @@ The car is not driving smooth due to the sparse waypoints provided by the [hight
   // The right time for generating the additional path;
   double time_ahead = pre_size * p_state.point_dt;
   ```
+  * Get the sensored car's distance
+  ```
+  dist = car[5] - car_s;
+  v_x = car[3]; // velocity on x
+  v_y = car[4]; // velocity on y
+  sen_speed = sqrt(v_x*v_x + v_y*v_y);
+
+  dist += time_ahead * sen_speed;
+  ```
   
 ### Behavior Planning
 * Very basic implementation
