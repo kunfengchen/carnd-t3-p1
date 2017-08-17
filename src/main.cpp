@@ -205,6 +205,11 @@ int main() {
 
   p_state.lane_num = 1;
   p_state.ref_velocity = 0.0;
+  p_state.limit_velocity = 49.5;
+  p_state.horizon_size = 50;
+  p_state.horizon_dist = 30.0;
+  p_state.point_dt = 0.02;
+  p_state.velocity_step = 0.224;
 
   ///// h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
   h.onMessage([&p_state,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
@@ -268,7 +273,7 @@ int main() {
 
           	int pre_size = previous_path_x.size();
 			// The right time for generating the additional path;
-			double time_ahead = pre_size * 0.02;
+			double time_ahead = pre_size * p_state.point_dt;
 
 			if (pre_size >0) {
 				car_s = end_path_s;
@@ -287,11 +292,11 @@ int main() {
 					cout << "Changing lane to " << p_state.lane_num << endl;
 				}
 
-				p_state.ref_velocity -= 0.224;
+				p_state.ref_velocity -= p_state.velocity_step;
 				cout << "decreasing speed" << endl;
-			} else if (p_state.ref_velocity < 49.5) {
+			} else if (p_state.ref_velocity < p_state.limit_velocity) {
 				cout << "increasing speed" << endl;
-				p_state.ref_velocity += 0.224;
+				p_state.ref_velocity += p_state.velocity_step;
 			} else {
 				cout << "constant speed" << endl;
 			}
@@ -385,17 +390,17 @@ int main() {
 			tk::spline spline;
 			spline.set_points(ptsx, ptsy);
 
-			double horizon_x = 30.0; // meters
+			double horizon_x = p_state.horizon_dist; // meters
 			double horizon_y = spline(horizon_x);
 			double horizon_dist = sqrt(horizon_x*horizon_x+horizon_y*horizon_y);
 
-			// 1 meter per second = 2.3694 miles per hour
-			double steps_x = (horizon_dist/(0.02*p_state.ref_velocity/2.24));
+			double steps_x = (horizon_dist/
+					(p_state.point_dt*p_state.ref_velocity/t3p1help::MPS_TO_MPH));
             double step_x = horizon_x/steps_x;
 			double global_x, global_y;
 			local_x = 0;
 
-			for (int i=1; i <= 50-pre_size; i++) {
+			for (int i=1; i <= p_state.horizon_size-pre_size; i++) {
 				local_x += step_x;
 				local_y = spline(local_x);
 

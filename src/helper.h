@@ -11,6 +11,8 @@ using Eigen::VectorXd;
 
 namespace t3p1help {
     const double MAX_S = 6914.14925765991;
+    // 1 meter per second = 2.23694 miles per hour
+    const double MPS_TO_MPH = 2.23694;
 
     /**
      * Keep the state for the planner.
@@ -18,8 +20,18 @@ namespace t3p1help {
     struct planner_state {
         // current car lane
         int lane_num = 1;
-        // velocity in mph, mile per hour
+        // current velocity in mph, mile per hour (MPH)
         double ref_velocity = 0.0;
+        // velocity limit, MPH
+        double limit_velocity = 49.5;
+        // horizon way point size;
+        double horizon_size = 50;
+        // horizon distance in meter
+        double horizon_dist = 30;
+        // time between waypionts in second
+        double point_dt = 0.02;
+        // velocity change per point_dt without jerking
+        double velocity_step = 0.224;
     } planner_state_t;
 
     /**
