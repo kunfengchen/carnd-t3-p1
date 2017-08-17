@@ -127,8 +127,9 @@ The car is not driving smooth due to the sparse waypoints provided by the [hight
   * If a car infront withn 30 meters (too close)
     * Decrease the speed, and
     * Change to next lane if safe to do so
-      * If no safe lane to move to, stay in the same lane.
-      
+      * If no safe lane to move to, stay in the same lane
+  * The avearge Best Miles without incidents is 15 miles
+
 
 ## Third Party Library
 * [spline tool](http://kluge.in-chemnitz.de/opensource/spline/)
