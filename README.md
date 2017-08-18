@@ -147,4 +147,8 @@ The car is not driving smooth due to the sparse waypoints provided by the [hight
 * [Path Planning Walkthrough Video](https://www.youtube.com/watch?v=3QP3hJHm4WM&feature=youtu.be)
 
 ## Demo
-<iframe width="560" height="315" src="https://www.youtube.com/embed/vGl2kUgaU-0" frameborder="0" allowfullscreen></iframe>
+* Basic Behavior Planner
+
+  <a href="http://www.youtube.com/watch?feature=player_embedded&v=vGl2kUgaU-0
+  " target="_blank"><img src="http://img.youtube.com/vi/vGl2kUgaU-0/0.jpg" 
+  alt="IMAGE ALT TEXT HERE" width="240" height="180" border="10" /></a>
