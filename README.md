@@ -145,3 +145,6 @@ The car is not driving smooth due to the sparse waypoints provided by the [hight
 
 ## References
 * [Path Planning Walkthrough Video](https://www.youtube.com/watch?v=3QP3hJHm4WM&feature=youtu.be)
+
+## Demo
+<iframe width="560" height="315" src="https://www.youtube.com/embed/vGl2kUgaU-0" frameborder="0" allowfullscreen></iframe>
