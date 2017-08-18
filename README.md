@@ -133,7 +133,7 @@ The car is not driving smooth due to the sparse waypoints provided by the [hight
 ## When Collisions Happen
 * Collisons will happen, since we can not controll other cars
 * We wil try to avoid the collions as mush as possible
-* When other cars do not follow the max acceleration and jerk, the car has to execeed/brake the max acceleration and jerk to avoid collisions. That means you will need break one rule to save other rules. Those can be designed into the cost functions of the path palnning.
+* When other cars do not follow the max acceleration and jerk, the car has to execeed/break the max acceleration and jerk rule to avoid collisions. That means you will need break rules to save other rules. Those can be designed into the cost functions of the path palnning.
 
 ## Other Things to Try
 * Use Jerk Minimizing Trajectory (JMT)
