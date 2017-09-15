@@ -1,5 +1,5 @@
 # carnd-t3-p1
-CarND Path Planning Project
+CarND Path Planning project to navigate around a virtual highway with other traffic with provided localization and sensor fusion data.
 
 ## Starter Code Cloned from Udacity
 https://github.com/udacity/CarND-Path-Planning-Project
